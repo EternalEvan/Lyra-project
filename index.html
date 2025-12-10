@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="Deformable Neural Radiance Fields creates free-viewpoint portraits (nerfies) from casually captured videos.">
+  <meta name="keywords" content="Nerfies, D-NeRF, NeRF">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Astra</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+  <!-- <link rel="icon" type="image/png" href="static/images/logo.png"> -->
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <!-- <link rel="icon" href="./static/images/favicon.svg"> -->
+  <link rel="icon" href="./static/images/favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="./static/images/favicon.ico" type="image/x-icon">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+<!-- 
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="https://keunhong.com">
+      <span class="icon">
+          <i class="fas fa-home"></i>
+      </span>
+      </a>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          More Research
+        </a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://hypernerf.github.io">
+            HyperNeRF
+          </a>
+          <a class="navbar-item" href="https://nerfies.github.io">
+            Nerfies
+          </a>
+          <a class="navbar-item" href="https://latentfusion.github.io">
+            LatentFusion
+          </a>
+          <a class="navbar-item" href="https://photoshape.github.io">
+            PhotoShape
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav> -->
+
+
+<section class="hero" style="position: relative; overflow: hidden;">
+    <!-- Background video -->
+    <video autoplay muted loop playsinline
+    style="
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      transform: translate(-50%, -50%);
+
+      z-index: -2;
+      object-fit: cover;
+      opacity: 0.35;   /* 背景更柔和，可调 */
+    ">
+    <source src="./static/videos/zigzag_drone_view.mp4" type="video/mp4">
+    </video>
+      <!-- Dark overlay -->
+    <div style="
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.45);  /* 半透明黑色，可调 */
+    z-index: -1;                   /* 一层在 video 之上、内容之下 */
+  "></div>
+
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Astra
+            <img src="./static/images/logo.png" alt="Logo" 
+            style="height: 1em; vertical-align: baseline; margin: 0 0.1em;">
+              : General Interactive World Model
+            with Autoregressive Denoising</h1>
+            <div class="is-size-5 publication-authors" style="color: #f2f2f2;" >
+            <span class="author-block">
+              <a href="https://eternalevan.github.io/">Yixuan Zhu</a><sup>1</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://aurora-edu.github.io?id=~Feng_Jiaqi1">Jiaqi Feng</a><sup>1</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://wzzheng.net">Wenzhao Zheng</a><sup>&#10013, 1</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://openreview.net/profile?id=~Yuan_Gao32">Yuan Gao</a><sup>2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://www.xtao.website">Xin Tao</a><sup>2</sup>,
+            </span>
+
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=P6MraaYAAAAJ&hl=en">Pengfei Wan</a><sup>2</sup>,
+            </span>
+
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=TN8uDQoAAAAJ&hl=en&authuser=1">Jiwen Lu</a><sup> 1</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=6a79aPwAAAAJ&hl=en&authuser=1">Jie Zhou</a><sup>1</sup>,
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors" style="color: #f2f2f2";>
+            <span class="author-block"><sup>1</sup>Tsinghua University,</span>
+            <span class="author-block"><sup>2</sup>Kuaishou Technology</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="https://openaccess.thecvf.com/content/CVPR2024/papers/Zhu_FlowIE_Efficient_Image_Enhancement_via_Rectified_Flow_CVPR_2024_paper.pdf"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2512.08931"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://github.com/EternalEvan/Astra"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <div id="results-carousel" class="carousel results-carousel">
+        <div class="item item-steve">
+          <video poster="" id="steve" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/zigzag_garden_5.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-chair-tp">
+          <video poster="" id="chair-tp" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/zigzag_drone_view.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-shiba">
+          <video poster="" id="shiba" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/zigzag_gate.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-fullbody">
+          <video poster="" id="fullbody" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/moveleft_hall.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-blueshirt">
+          <video poster="" id="blueshirt" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/zigzag_garden_3.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-mask">
+          <video poster="" id="mask" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/left_right_indoor.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-coffee">
+          <video poster="" id="coffee" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/moveright_street_5.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+        <div class="item item-toby">
+          <video poster="" id="toby" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/zigzag_garden_1.mp4"
+                    type="video/mp4">
+          </video>
+        </div>
+      
+      </div>
+      <p class="has-text-centered mt-4">
+        All videos are generated by <span class="dnerf"><b>Astra</b></span> using the scenario image as the first frame.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- <section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <video id="teaser" autoplay muted loop playsinline height="100%">
+        <source src="./static/videos/teaser.mp4"
+                type="video/mp4">
+      </video>
+      <h2 class="subtitle has-text-centered">
+        <span class="dnerf">Astra</span> generates action-driven exploration videos given a scene image.
+      </h2>
+    </div>
+  </div>
+</section> -->
+<!-- Opening Image-->
+<!-- <section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <div align=center>
+        <img src="./static/images/pipeline.png" alt="Agent Attack" style="width: 100%;">
+        <h2 class="subtitle has-text-centered">
+          <div align=justify>
+            Overview of the proposed Astra. Our autoregressive denoising world model generates
+            future video chunk by chunk from an initial image, actions, and optional prompts. Chunk-wise
+            causal conditioning enforces temporal coherence and faithful action response.
+          </div>
+        </h2>
+      </div>
+    </div>
+  </div>
+</section> -->
+<!-- Opening Image -->
+<!-- <div class="columns is-centered">
+  <video id="demo1" autoplay controls muted loop playsinline height="80%" width="80%" center>
+  <source src="./static/videos/demo1.mp4"
+          type="video/mp4">
+</video>
+</div>
+<div class="columns is-centered">
+  <video id="demo2" autoplay controls muted loop playsinline height="80%" width="80%" center>
+  <source src="./static/videos/demo2.mp4"
+          type="video/mp4">
+</video>
+</div>
+<div class="columns is-centered">
+  <video id="demo3" autoplay controls muted loop playsinline height="80%" width="80%" center>
+  <source src="./static/videos/demo3.mp4"
+          type="video/mp4">
+</video>
+</div> -->
+
+
+<!-- <section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <video id="teaser" autoplay muted loop playsinline height="100%">
+        <source src="./static/videos/teaser.mp4"
+                type="video/mp4">
+      </video>
+      <h2 class="subtitle has-text-centered">
+        <span class="dnerf">Nerfies</span> turns selfie videos from your phone into
+        free-viewpoint
+        portraits.
+      </h2>
+    </div>
+  </div>
+</section> -->
+
+
+<!-- <section class="section hero is-light"></section> -->
+
+<section class="section hero is-light" style="padding-top: 20px;">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Recent advances in diffusion transformers have empowered video generation models to generate high-quality video clips from texts or images. However, world models with the ability to predict long-horizon futures from past observations and actions remain underexplored, especially for general-purpose scenarios and various forms of actions. To bridge this gap, we introduce Astra, an interactive general world model that generates real-world futures for diverse scenarios (e.g., autonomous driving, robot grasping) with precise action interactions (e.g., camera motion, robot action). We propose an autoregressive denoising architecture and use temporal causal attention to aggregate past observations and support streaming outputs. We use a noise-augmented history memory to avoid over-reliance on past frames to balance responsiveness with temporal coherence. For precise action control, we introduce an action-aware adapter that directly injects action signals into the denoising process. We further develop a mixture of action experts that dynamically route heterogeneous action modalities, enhancing versatility across diverse real-world tasks such as exploration, manipulation, and camera control. Astra achieves interactive, consistent, and general long-term video prediction and supports various forms of interactions. Experiments across multiple datasets demonstrate the improvements of Astra in fidelity, long-range prediction, and action alignment over existing state-of-the-art world models.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!--/ Abstract. -->
+
+    <!-- pipeline. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Pipeline</h2>
+        <img src="./static/images/pipeline.png">
+        <h2 class="subtitle is-6 has-text-centered">
+          <div align=justify>
+            <b>Overview of the proposed Astra.</b> Our autoregressive denoising world model generates
+            future video chunk by chunk from an initial image, actions, and optional prompts. Chunk-wise
+            causal conditioning enforces temporal coherence and faithful action response.
+          </div>
+        </h2>
+      </div>
+    </div>
+
+    <!-- diagram. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Autoregressive Rollout Diagram</h2>
+        <img src="./static/images/diagram.png">
+        <h2 class="subtitle is-6 has-text-centered">
+          <div align=justify>
+            Astra generates future video <b>chunk by chunk from an initial image</b>, actions, and optional prompts. Chunk-wise
+causal conditioning enforces temporal coherence and faithful action response.
+        </h2>
+      </div>
+    </div>
+
+    <!-- New: side-by-side image + video (wrapped inside is-four-fifths to align widths) -->
+<!-- <div class="columns is-centered">
+  <div class="column is-four-fifths">
+
+    <div class="columns is-centered" style="margin-top: 0px; column-gap: 10px;">
+
+     
+      <div class="column is-8 has-text-centered">
+        <img src="./static/images/autoregression.png"
+             style="width: 100%; height: 130px; object-fit: cover; border-radius: 6px;">
+      </div>
+
+      <div class="column is-4 has-text-centered">
+        <video autoplay controls muted loop playsinline
+               style="width: 100%; height: 130px; object-fit: cover; border-radius: 6px;">
+          <source src="./static/videos/zigzag_drone_view.mp4" type="video/mp4">
+        </video>
+      </div>
+
+    </div>
+
+  </div>
+</div> -->
+
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Mixture of Action Experts</h2>
+        <img src="./static/images/moe.png">
+        <h2 class="subtitle is-6 has-text-centered">
+          <div align=justify>
+            <b>Mixture of Action Experts (MoAE).</b> Action signals from diverse modalities are projected
+into a shared space, augmented with a history mask, and routed to modality-specialized experts. A
+dynamic router selects top-k experts, whose outputs are aggregated into unified embeddings and fed
+into the Flow Transformer, enabling versatile and precise action-conditioned generation.
+        </h2>
+      </div>
+    </div>
+</section>
+
+<!-- Experiment. -->
+<section class="hero" style="padding-top: 40px;">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Experiments</h2>
+        <p class="subtitle is-8" style="margin-top: 20px;">Action-driving video generation</p>
+
+        <img src="./static/images/explore.png" width="80%">
+        <!-- CrowdPose
+        <img src="./static/images/crowdpose.png"> -->
+      </div>
+    </div>
+
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <p class="subtitle is-8" style="margin-top: 10px;">Qualitative comparisons</p>
+        <img src="./static/images/main-cmp.png" width="80%">
+      </div>
+    </div>
+
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <p class="subtitle is-8" style="margin-top: 10px;">Quantitative comparisons</p>
+        <img src="./static/images/cmp-quant.png" width="80%">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Experiment. -->
+<section class="hero" style="padding-top: 40px;">
+  <div class="columns is-centered has-text-centered">
+    <div class="column is-four-fifths">
+      <h2 class="title is-3">Analysis</h2>
+      <p class="subtitle is-8" style="margin-top: 20px;">Ablation studies</p>
+
+      <img src="./static/images/ablation.png" width="78%">
+      <!-- CrowdPose
+      <img src="./static/images/crowdpose.png"> -->
+      
+
+    </div>
+  </div>
+
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <p class="subtitle is-8 has-text-centered" style="margin-top: 0px;">
+      Autonomous driving
+    </p>
+    <div class="columns is-centered">
+
+      <!-- Left video -->
+      <div class="column">
+        <div class="content">
+          <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/left_road.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+
+      <!-- Right video -->
+      <div class="column">
+        <div class="columns is-centered">
+          <div class="column content">
+            <video id="matting-video" autoplay controls muted loop playsinline height="100%">
+              <source src="./static/videos/right_road.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Unified caption -->
+    <p style="margin-top: 10px;">
+      Astra enables arbitrary motion trajectories within the same scene. For this intersection, we generate both a left-turn and a right-turn sequence.
+    </p>
+    <!-- More applications -->
+    <p class="subtitle is-8 has-text-centered" style="margin-top: 20px;">
+      More applications
+    </p>
+
+    <figure class="image is-centered">
+      <img src="./static/images/more-application.png" style="max-width: 80%; margin: 0 auto;">
+    </figure>
+    <p style="margin-top: 0px;">
+      Our framework handles diverse scenarios: (a) autonomous driving, predicting long-horizon traffic dynamics from control inputs; (b) manipulation, conditioning robot actions on object interactions; and (c) camera control, reflecting viewpoint
+changes in coherent videos. These demonstrate Astra's versatility for interactive world modeling.
+    </p>
+
+    <!-- More applications -->
+    <p class="subtitle is-8 has-text-centered" style="margin-top: 20px;">
+      Out-of-domain scenarios
+    </p>
+
+    <figure class="image is-centered">
+      <img src="./static/images/ood.png" style="max-width: 80%; margin: 0 auto;">
+    </figure>
+    <p style="margin-top: 10px;">
+      Astra generalizes to scenes not seen during
+training, including indoor environments, Minecraft worlds, and animation-style scenes, producing
+coherent futures that follow camera or navigation commands
+    </p>
+
+    <p class="subtitle is-8 has-text-centered" style="margin-top: 10px;">
+      Parameter analysis
+    </p>
+
+    <figure class="image is-centered">
+      <img src="./static/images/parameter.png" style="max-width: 80%; margin: 0 auto;">
+    </figure>
+    <p style="margin-top: 10px;">
+      Astra introduces the smallest parameter overhead among all
+methods, adding only lightweight adapters while preserving the efficiency of the frozen backbone.
+    </p>
+
+    <p class="subtitle is-8 has-text-centered" style="margin-top: 10px;">
+      Datasets
+    </p>
+
+    <figure class="image is-centered">
+      <img src="./static/images/datasets.png" style="max-width: 80%; margin: 0 auto;">
+    </figure>
+    <p style="margin-top: 10px;">
+      Datasets used in experiments, along with their actions and sample sizes. For each dataset,
+we list the action type, followed by the dimensionality of its representation.
+    </p>
+
+    <p class="subtitle is-8 has-text-centered" style="margin-top: 10px;">
+      Effect of visual inertia
+    </p>
+
+    <figure class="image is-centered">
+      <img src="./static/images/curve-2.png" style="max-width: 80%; margin: 0 auto;">
+    </figure>
+    <p style="margin-top: 10px;">
+      As the history length increases, video quality improves, but the
+action-following score drops sharply, illustrating the visual inertia phenomenon. This motivates our designs in Astra.
+    </p>
+    
+</section>
+    <!--/ Matting. -->
+
+<!-- <section class="section">
+  <div class="container is-max-desktop">
+
+    <div class="columns is-centered">
+
+       
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3">Visual Effects</h2>
+          
+          <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/dollyzoom-stacked.mp4"
+                    type="video/mp4">
+          </video>
+          <p>
+            Using <i>nerfies</i> you can create fun visual effects. This Dolly zoom effect
+            would be impossible without nerfies since it would require going through a wall.
+          </p>
+        </div>
+      </div>
+
+      <div class="column">
+        <h2 class="title is-3">Matting</h2>
+        <div class="columns is-centered">
+          <div class="column content">
+            <p>
+              As a byproduct of our method, we can also solve the matting problem by ignoring
+              samples that fall outside of a bounding box during rendering.
+            </p>
+            <video id="matting-video" controls playsinline height="100%">
+              <source src="./static/videos/matting.mp4"
+                      type="video/mp4">
+            </video>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+
+
+  </div>
+</section> -->
+<section class="section hero is-light" style="padding-top: 20px;">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Future Works</h2>
+        <div class="content has-text-justified">
+          <p>
+            Astra's future work includes <strong>releasing full inference pipelines</strong> for additional scenarios such as <strong>autonomous driving</strong> and <strong>robotic manipulation</strong>, 
+            <strong>open-sourcing our data processing utilities and training code</strong> for broader reproducibility, and 
+            <strong>developing a higher-resolution version</strong> of Astra by integrating more advanced generative backbones such as <strong>Wan 2.2</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@inproceedings{zhu2025astra,
+  title={Astra: General Interactive World Model with Autoregressive Denoising},
+  author={Zhu, Yixuan and Feng, Jiaqi and Zheng, Wenzhao and Gao, Yuan and Tao, Xin and Wan, Pengfei and Zhou, Jie and Lu, Jiwen},
+  booktitle={arxiv},
+  year={2025}
+}</code></pre>
+  </div>
+</section>
+
+
+<!-- <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <a class="icon-link"
+         href="./static/videos/nerfies_paper.pdf">
+        <i class="fas fa-file-pdf"></i>
+      </a>
+      <a class="icon-link" href="https://github.com/keunhong" class="external-link" disabled>
+        <i class="fab fa-github"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is licensed under a <a rel="license"
+                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+          <p>
+            This means you are free to borrow the <a
+              href="https://github.com/nerfies/nerfies.github.io">source code</a> of this website,
+            we just ask that you link back to this page in the footer.
+            Please remember to remove the analytics code included in the header of the website which
+            you do not want on your website.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer> -->
+
+</body>
+</html>
