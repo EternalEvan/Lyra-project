@@ -191,7 +191,7 @@
                 <a href="https://huggingface.co/EvanEternal/Astra"
                    class="external-link button is-normal is-rounded is-dark">
                    <span class="icon"> 🤗 </span>
-                  <span>HuggingFace</span>
+                  <span>Huggingface</span>
                 </a>
               </span>
             </div>
@@ -343,7 +343,7 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Recent advances in diffusion transformers have empowered video generation models to generate high-quality video clips from texts or images. However, world models with the ability to predict long-horizon futures from past observations and actions remain underexplored, especially for general-purpose scenarios and various forms of actions. To bridge this gap, we introduce Astra, an interactive general world model that generates real-world futures for diverse scenarios (e.g., autonomous driving, robot grasping) with precise action interactions (e.g., camera motion, robot action). We propose an autoregressive denoising architecture and use temporal causal attention to aggregate past observations and support streaming outputs. We use a noise-augmented history memory to avoid over-reliance on past frames to balance responsiveness with temporal coherence. For precise action control, we introduce an action-aware adapter that directly injects action signals into the denoising process. We further develop a mixture of action experts that dynamically route heterogeneous action modalities, enhancing versatility across diverse real-world tasks such as exploration, manipulation, and camera control. Astra achieves interactive, consistent, and general long-term video prediction and supports various forms of interactions. Experiments across multiple datasets demonstrate the improvements of Astra in fidelity, long-range prediction, and action alignment over existing state-of-the-art world models.
+            Recent advances in generative modeling have enabled video generation systems to synthesize high-quality, temporally coherent scenes that simulate realistic world dynamics. However, world models trained purely on real-world videos often exhibit weak interactivity—they persist in previous motion patterns and respond poorly to abrupt action changes. This limitation arises from the inherent bias of real-world datasets, where trajectories such as driving or walking contain few large-magnitude motion transitions. To address this inertia bias, we propose Lyra, a 3D-aware GRPO framework that enhances the action responsiveness and motion accuracy of pre-trained world models through reinforcement learning. By extracting 3D scene attributes from generated videos, we design a 3D-aware reward that enforces geometric and directional consistency between predicted motion and commanded actions, enabling precise control behaviors and encouraging the emergence of spatial intelligence. Moreover, we introduce an action-interface optimization strategy that confines policy updates to the action-conditioning adapter, ensuring stable and efficient fine-tuning while preserving the pre-trained visual fidelity. Without relying on explicit 3D intermediate representations or extra conditioning modules, our method produces sharper, more accurate motion responses and smoother control dynamics, significantly enhancing the interactivity and controllability of world models.
           </p>
         </div>
       </div>
@@ -357,16 +357,18 @@
         <img src="./static/images/pipeline.png">
         <h2 class="subtitle is-6 has-text-centered">
           <div align=justify>
-            <b>Overview of the proposed Astra.</b> Our autoregressive denoising world model generates
-            future video chunk by chunk from an initial image, actions, and optional prompts. Chunk-wise
-            causal conditioning enforces temporal coherence and faithful action response.
+              <b>Overview of the proposed <em>Lyra</em>.</b> 
+              Lyra enhances a pre-trained video world model through 3D-aware GRPO fine-tuning (left) and action-interface optimization (right). 
+              In GRPO training, a pre-trained 3D reconstruction network extracts geometric attributes from generated videos to compute rewards that enforce alignment between predicted motion and commanded actions. 
+              Lightweight MLP adapters, inserted before self-attention blocks, inject action signals into motion latents; 
+              during GRPO, only these adapters are updated, ensuring stable learning while preserving visual fidelity and temporal coherence.
           </div>
         </h2>
       </div>
     </div>
 
     <!-- diagram. -->
-    <div class="columns is-centered has-text-centered">
+    <!-- <div class="columns is-centered has-text-centered">
       <div class="column is-four-fifths">
         <h2 class="title is-3">Autoregressive Rollout Diagram</h2>
         <img src="./static/images/diagram.png">
@@ -376,7 +378,7 @@
 causal conditioning enforces temporal coherence and faithful action response.
         </h2>
       </div>
-    </div>
+    </div> -->
 
     <!-- New: side-by-side image + video (wrapped inside is-four-fifths to align widths) -->
 <!-- <div class="columns is-centered">
@@ -404,14 +406,17 @@ causal conditioning enforces temporal coherence and faithful action response.
 
     <div class="columns is-centered has-text-centered">
       <div class="column is-four-fifths">
-        <h2 class="title is-3">Mixture of Action Experts</h2>
-        <img src="./static/images/moe.png">
+        <h2 class="title is-3">Comparison with exsiting methods</h2>
+        <img src="./static/images/method-cmp.png" style="max-width: 70%">
         <h2 class="subtitle is-6 has-text-centered">
           <div align=justify>
-            <b>Mixture of Action Experts (MoAE).</b> Action signals from diverse modalities are projected
-into a shared space, augmented with a history mask, and routed to modality-specialized experts. A
-dynamic router selects top-k experts, whose outputs are aggregated into unified embeddings and fed
-into the Flow Transformer, enabling versatile and precise action-conditioned generation.
+            As shown in (a), 
+            conventional world models learn action-conditioned video generation from action-video datasets. 
+            Differently, some methods,
+            illustrated in (b), use explicit 3D attributes (e.g., point clouds) to improve spatial consistency. 
+            Both approaches rely on diffusion-based training. 
+            (c) Our proposed Lyra applies the GRPO framework to a pre-trained world model without extra 3D data or control modules, 
+            introducing a 3D-aware reward that aligns trajectories with actions and optimizes the model’s action interface for enhanced responsiveness.
         </h2>
       </div>
     </div>
@@ -424,7 +429,8 @@ into the Flow Transformer, enabling versatile and precise action-conditioned gen
         <h2 class="title is-3">Experiments</h2>
         <p class="subtitle is-8" style="margin-top: 20px;">Action-driving video generation</p>
 
-        <img src="./static/images/explore.png" width="80%">
+        <img src="./static/images/teaser.png" width="80%">
+        <img src="./static/images/exploration.png" width="80%">
         <!-- CrowdPose
         <img src="./static/images/crowdpose.png"> -->
       </div>
@@ -463,65 +469,6 @@ into the Flow Transformer, enabling versatile and precise action-conditioned gen
 
 </section>
 
-<section class="section">
-  <div class="container is-max-desktop">
-    <p class="subtitle is-8 has-text-centered" style="margin-top: 0px;">
-      Autonomous driving
-    </p>
-    <div class="columns is-centered">
-
-      <!-- Left video -->
-      <div class="column">
-        <div class="content">
-          <video id="dollyzoom" autoplay controls muted loop playsinline height="100%">
-            <source src="./static/videos/left_road.mp4" type="video/mp4">
-          </video>
-        </div>
-      </div>
-
-      <!-- Right video -->
-      <div class="column">
-        <div class="columns is-centered">
-          <div class="column content">
-            <video id="matting-video" autoplay controls muted loop playsinline height="100%">
-              <source src="./static/videos/right_road.mp4" type="video/mp4">
-            </video>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Unified caption -->
-    <p style="margin-top: 10px;">
-      Astra enables arbitrary motion trajectories within the same scene. For this intersection, we generate both a left-turn and a right-turn sequence.
-    </p>
-    <!-- More applications -->
-    <p class="subtitle is-8 has-text-centered" style="margin-top: 20px;">
-      More applications
-    </p>
-
-    <figure class="image is-centered">
-      <img src="./static/images/more-application.png" style="max-width: 80%; margin: 0 auto;">
-    </figure>
-    <p style="margin-top: 0px;">
-      Our framework handles diverse scenarios: (a) autonomous driving, predicting long-horizon traffic dynamics from control inputs; (b) manipulation, conditioning robot actions on object interactions; and (c) camera control, reflecting viewpoint
-changes in coherent videos. These demonstrate Astra's versatility for interactive world modeling.
-    </p>
-
-    <!-- More applications -->
-    <p class="subtitle is-8 has-text-centered" style="margin-top: 20px;">
-      Out-of-domain scenarios
-    </p>
-
-    <figure class="image is-centered">
-      <img src="./static/images/ood.png" style="max-width: 80%; margin: 0 auto;">
-    </figure>
-    <p style="margin-top: 10px;">
-      Astra generalizes to scenes not seen during
-training, including indoor environments, Minecraft worlds, and animation-style scenes, producing
-coherent futures that follow camera or navigation commands
-    </p>
 
     <p class="subtitle is-8 has-text-centered" style="margin-top: 10px;">
       Parameter analysis
@@ -535,30 +482,7 @@ coherent futures that follow camera or navigation commands
 methods, adding only lightweight adapters while preserving the efficiency of the frozen backbone.
     </p>
 
-    <p class="subtitle is-8 has-text-centered" style="margin-top: 10px;">
-      Datasets
-    </p>
 
-    <figure class="image is-centered">
-      <img src="./static/images/datasets.png" style="max-width: 80%; margin: 0 auto;">
-    </figure>
-    <p style="margin-top: 10px;">
-      Datasets used in experiments, along with their actions and sample sizes. For each dataset,
-we list the action type, followed by the dimensionality of its representation.
-    </p>
-
-    <p class="subtitle is-8 has-text-centered" style="margin-top: 10px;">
-      Effect of visual inertia
-    </p>
-
-    <figure class="image is-centered">
-      <img src="./static/images/curve-2.png" style="max-width: 80%; margin: 0 auto;">
-    </figure>
-    <p style="margin-top: 10px;">
-      As the history length increases, video quality improves, but the
-action-following score drops sharply, illustrating the visual inertia phenomenon. This motivates our designs in Astra.
-    </p>
-    
 </section>
     <!--/ Matting. -->
 
